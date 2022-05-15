@@ -1,1 +1,2 @@
 # Game-of-Life
+GAME OF LIFE IN MANIERA SEMPLICE
