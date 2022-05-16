@@ -7,7 +7,7 @@
 CellBase Cell::CELL_BASE = CellBase {
     sf::Color::Black, // vita
     sf::Color::White, // morte
-    10                // miracoli
+    20                // miracoli
 };
 
 int main() {
@@ -23,16 +23,34 @@ int main() {
     );
     window.setFramerateLimit(5);
 
-    Universe uny = Universe(programInfo, Cell::CELL_BASE.size).generate_random(2);
+    Universe uny = Universe(programInfo, Cell::CELL_BASE.size).generate_empty();
 
+    std::cout << uny.getRows() << std::endl;
+    std::cout << uny.getColumns() << std::endl;
+
+    bool life = false;
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
+            switch (event.type) {
+                case sf::Event::Closed:
+                        window.close();
+                case sf::Event::MouseButtonPressed: {
+                    if (event.mouseButton.button == sf::Mouse::Left) {
+                        int x = event.mouseButton.x / Cell::CELL_BASE.size;
+                        int y = event.mouseButton.y / Cell::CELL_BASE.size;
+                        uny.setCell(sf::Vector2i(y, x), CELL_STATE::ALIVE);
+                    } else if (event.mouseButton.button == sf::Mouse::Right) {
+                        life = !life;
+                        std::cout << "LIFE: " << life << std::endl;
+                    }
+                }
+            }
         }
 
-        uny.life();
+        if (life) {
+            uny.life();
+        }
 
         window.clear(programInfo.background_color);
         window.draw(uny);
