@@ -16,10 +16,10 @@ class Universe : public sf::Drawable, public sf::Transformable {
 
         std::vector<Cell> grid;
     public:
-        Universe(const WindowInfo& info, int cellSize) { 
+        Universe(const WindowInfo& info, int cellSize) {
             this->cellSize = cellSize;
             this->maxCells = maxCells;
-            
+
             this->rows = info.height / cellSize;
             this->columns = info.width / cellSize;
 
@@ -36,7 +36,7 @@ class Universe : public sf::Drawable, public sf::Transformable {
                         std::experimental::randint(0, 1) == 0 ? CELL_STATE::DEAD : CELL_STATE::ALIVE
                     ) : CELL_STATE::DEAD;
 
-                    if (state == CELL_STATE::ALIVE) 
+                    if (state == CELL_STATE::ALIVE)
                         maxAliveRow--;
 
                     Cell c = Cell (
@@ -44,11 +44,11 @@ class Universe : public sf::Drawable, public sf::Transformable {
                         sf::Vector2f(column * this->cellSize, row * this->cellSize)
                     );
 
-                    this->grid.push_back(c);                                        
+                    this->grid.push_back(c);
                 }
                 maxAliveRow = MAX_ALIVE;
             }
-            
+
             return *this;
         }
 
@@ -57,8 +57,8 @@ class Universe : public sf::Drawable, public sf::Transformable {
                 for (int column = 0; column < this->getColumns(); column++) {
                     int index = (row * this->getColumns()) + column;
 
-                    CELL_STATE state = (index % 2 == 0 || index % 7 == 0) ? 
-                        CELL_STATE::ALIVE : CELL_STATE::DEAD;  
+                    CELL_STATE state = (index % 2 == 0 || index % 7 == 0) ?
+                        CELL_STATE::ALIVE : CELL_STATE::DEAD;
 
                     Cell c = Cell(
                         state,
@@ -69,6 +69,23 @@ class Universe : public sf::Drawable, public sf::Transformable {
                 }
             }
             return *this;
+        }
+
+        Universe generate_empty() {
+            for (int row = 0; row < this->getRows(); row++) {
+                for (int column = 0; column < this->getColumns(); column++) {
+                    Cell c = Cell(
+                        CELL_STATE::DEAD,
+                        sf::Vector2f(column * this->cellSize, row * this->cellSize)
+                    );
+                    this->grid.push_back(c);
+                }
+            }
+            return *this;
+        }
+
+        void setCell(sf::Vector2i point, CELL_STATE state) {
+            this->getCell(point.x, point.y)->changeState();
         }
 
         int getRows() const {
@@ -84,12 +101,17 @@ class Universe : public sf::Drawable, public sf::Transformable {
             return &this->grid.at(index);
         }
 
+        Cell getCellNOREFERENCE(int row, int column) {
+            int index = (row * this->getColumns()) + column;
+            return this->grid.at(index);
+        }
+
         int getNumberOfNeighbours(int row, int column) {
             int neighbours = 0;
-            
+
             int startRow = row == 0 ? row : row - 1;
             int startColumn = column == 0 ? column : column - 1;
-            
+
             int endRow = row == this->getRows() - 1 ? row : row + 1;
             int endColumn = column == this->getColumns() - 1 ? column : column + 1;
 
@@ -102,26 +124,36 @@ class Universe : public sf::Drawable, public sf::Transformable {
                     }
                 }
             }
-            return neighbours; 
+            return neighbours;
         }
 
+
         void life() {
+            auto resultGrid = std::vector<Cell>();
+
             for (int row = 0; row < this->getRows(); row++) {
                 for (int column = 0; column < this->getColumns(); column++) {
-                    Cell *c = this->getCell(row, column);
+                    Cell c = this->getCellNOREFERENCE(row, column);
+
+                    int x = c.getShape().getPosition().x / 20;
+                    int y = c.getShape().getPosition().y / 20;
 
                     int neighbours = getNumberOfNeighbours(row, column);
-                    if (c->getState() == CELL_STATE::ALIVE) {
+                    if (c.getState() == CELL_STATE::ALIVE) {
                         if (neighbours < 2 || neighbours > 3) {
-                            c->changeState();
+                            c.changeState();
                         }
                     } else {
                         if (neighbours == 3) {
-                            c->changeState();
+                            c.changeState();
                         }
                     }
+
+                    resultGrid.push_back(c);
                 }
             }
+
+            this->grid = resultGrid;
         }
 
         void render(sf::RenderTarget &target) const {
